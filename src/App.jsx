@@ -397,7 +397,7 @@ function ChassisCard({ chassis }) {
       </CardHeader>
       <CardContent className="flex flex-col h-full">
         <div className="space-y-4">
-          <AspectRatio ratio={16/9}>
+          <AspectRatio ratio={16/9} className="mb-2">
             <div className="w-full h-full overflow-x-auto flex snap-x snap-mandatory rounded">
               {orderedGallerySources.map((src, idx) => (
                 <img
@@ -413,7 +413,7 @@ function ChassisCard({ chassis }) {
               ))}
             </div>
           </AspectRatio>
-          <div>
+          <div className="mb-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="w-full justify-between">

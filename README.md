@@ -164,6 +164,31 @@ export const submitOrder = async (orderData) => {
 }
 ```
 
+### Order Management Integration
+
+- The configurator can send a completed build to the Order Management backend via an intake endpoint.
+- The Orders UI is available at `/dealer` (and `/orders`) and consumes the Order Management API for listing and details.
+
+Configuration:
+
+1. Set the API base for the Order Management backend in your environment:
+
+```
+VITE_ORDER_API_BASE=http://localhost:3000
+```
+
+2. Start the Order Management backend so that the following endpoints are available at the base above:
+   - `POST /api/orders/intake` (Create new order from configurator)
+   - `GET /api/orders` (List orders with filters)
+   - `GET /api/orders/:id` (Order + status events)
+   - `POST /api/orders/:id/transition` (Advance status)
+   - `PATCH /api/orders/:id/etas` (Update ETAs)
+   - `POST /api/listings/:id/publish` (Publish stock unit to Dealer Website channel)
+
+Notes:
+- If the backend runs on a different origin, the front-end will call it using `VITE_ORDER_API_BASE`.
+- For dev on the same origin, leave `VITE_ORDER_API_BASE` empty.
+
 ## Customization
 
 ### Adding New Body Types

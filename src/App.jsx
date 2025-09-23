@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, useNavigate, Navigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button.jsx'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx'
 import { Badge } from '@/components/ui/badge.jsx'
@@ -34,6 +34,7 @@ import {
 } from 'lucide-react'
 import './App.css'
 import { demoInventory, demoBodies } from '@/lib/demo-data.js'
+import AnimatedHeader from './components/AnimatedHeader.jsx'
 
 // Import new configurator pages
 import { ConfiguratorChassisSelection } from './pages/ConfiguratorChassisSelection.jsx'
@@ -43,6 +44,8 @@ import { ConfiguratorBodySpecs } from './pages/ConfiguratorBodySpecs.jsx'
 import { ConfiguratorUpfitter } from './pages/ConfiguratorUpfitter.jsx'
 import { ConfiguratorPricing } from './pages/ConfiguratorPricing.jsx'
 import { ConfiguratorReview } from './pages/ConfiguratorReview.jsx'
+import { OrdersPage } from './pages/Orders.jsx'
+import { OrderDetailPage } from './pages/OrderDetail.jsx'
 import { loadConfiguration, saveConfiguration, configToQuery, parseQueryToConfig } from './lib/configurationStore.js'
 
 // Frontend-only demo: all data is mocked locally
@@ -111,7 +114,7 @@ function Header() {
 
   const navigation = [
     { name: 'Catalog', href: '/', icon: ShoppingCart },
-    { name: 'Order Management', href: '/dealer', icon: Building2 },
+    { name: 'Order Management', href: '/ordermanagement', icon: Building2 },
     { name: 'Find an Upfitter', href: '/upfitter', icon: Wrench },
   ]
 
@@ -502,11 +505,7 @@ function Marketplace() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Hero Section */}
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">
-          Explore Ford Pro Vehicles and Upfit Solutions
-        </h1>
-      </div>
+      <AnimatedHeader />
 
       {/* Search Bar */}
       <div className="max-w-2xl mx-auto mb-8">
@@ -581,16 +580,7 @@ function Marketplace() {
 }
 
 // Dealer Portal Component (Temporarily disabled)
-function DealerPortal() {
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <div className="text-center py-24 border rounded-lg bg-white">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Order Management</h1>
-        <p className="text-gray-600">Coming Soon</p>
-      </div>
-    </div>
-  )
-}
+function DealerPortal() { return <OrdersPage /> }
 
 // Configurator Component - Redirects to new flow starting with chassis selection
 function Configurator() {
@@ -643,7 +633,10 @@ function App() {
         <main className="flex-1">
           <Routes>
             <Route path="/" element={<Marketplace />} />
-            <Route path="/dealer" element={<DealerPortal />} />
+            <Route path="/ordermanagement" element={<OrdersPage />} />
+            <Route path="/ordermanagement/:id" element={<OrderDetailPage />} />
+            <Route path="/dealer" element={<Navigate to="/ordermanagement" replace />} />
+            <Route path="/orders" element={<Navigate to="/ordermanagement" replace />} />
             <Route path="/configure" element={<Configurator />} />
             <Route path="/configurator/chassis-selection" element={<ConfiguratorChassisSelection />} />
             <Route path="/configurator/body-type" element={<ConfiguratorBodyType />} />

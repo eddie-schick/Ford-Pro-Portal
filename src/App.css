@@ -118,3 +118,84 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Animated rotating word header */
+@keyframes rotate-word {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  6% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  16.666% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+.rotate-word {
+  animation: rotate-word 18s ease-in-out infinite both;
+  will-change: transform, opacity;
+}
+
+/* Ensure absolute rotating words align left and vertically with heading baseline */
+.rotate-word {
+  display: inline-block;
+  text-align: left;
+}
+
+/* Subtle animated hero background band */
+.hero-band {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, oklch(0.98 0 0) 0%, oklch(0.965 0 0) 100%);
+  box-shadow: 0 1px 0 0 oklch(0.922 0 0) inset, 0 -1px 0 0 oklch(0.922 0 0) inset;
+}
+
+.hero-band::before,
+.hero-band::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.hero-band::before {
+  background: radial-gradient(1200px 200px at 10% 0%, oklch(0.985 0 0) 0%, transparent 70%),
+              radial-gradient(1200px 200px at 90% 0%, oklch(0.985 0 0) 0%, transparent 70%);
+  opacity: 0.35;
+  animation: heroSweep 12s ease-in-out infinite;
+}
+
+.hero-band::after {
+  background: linear-gradient(180deg, transparent 0%, oklch(1 0 0) 100%);
+}
+
+/* Ensure text sits above overlays */
+.hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes heroSweep {
+  0% { transform: translateX(-5%); }
+  50% { transform: translateX(5%); }
+  100% { transform: translateX(-5%); }
+}
+
+/* Center the whole headline block while visually nudging Ford X left */
+.headline-offset {
+  position: relative;
+  left: -3.5ch; /* subtle extra left shift */
+}

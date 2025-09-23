@@ -4,10 +4,14 @@ import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 // Removed decorative icons for a cleaner, icon-free configurator experience
 import { submitOrder, exportPDFQuote, emailQuote, getChassis, getBodies, getOptions } from '@/api/routes'
+import { intakeOrder } from '@/lib/orderApi'
+import { useNavigate } from 'react-router-dom'
+import { Check } from 'lucide-react'
 import { calculatePricing } from '@/lib/configurationStore'
 import { useEffect, useMemo, useState } from 'react'
 
 export function ReviewSheet({ configuration }) {
+  const navigate = useNavigate()
   const [submitting, setSubmitting] = useState(false)
   const [orderNumber, setOrderNumber] = useState(null)
   const [emailSent, setEmailSent] = useState(false)
@@ -81,18 +85,39 @@ export function ReviewSheet({ configuration }) {
   const handleSubmitOrder = async () => {
     setSubmitting(true)
     try {
-      const order = await submitOrder({
-        chassis: configuration.chassis,
-        bodyType: configuration.bodyType,
-        bodyManufacturer: configuration.bodyManufacturer,
-        bodySpecs: configuration.bodySpecs,
-        bodyAccessories: configuration.bodyAccessories,
-        upfitter: configuration.upfitter,
-        pricing: configuration.pricing,
-        financing: configuration.financing,
-        totalPrice: configuration.pricing.total
-      })
-      setOrderNumber(order.orderNumber)
+      const cfg = configuration
+      const p = cfg.pricing || {}
+      const payload = {
+        dealerCode: cfg.dealerCode || 'DEMO',
+        upfitterId: cfg.upfitter?.id,
+        isStock: Boolean(cfg.isStock),
+        build: {
+          bodyType: cfg.bodyType,
+          manufacturer: cfg.bodyManufacturer,
+          chassis: {
+            series: cfg.chassis?.series,
+            cab: cfg.chassis?.cab,
+            drivetrain: cfg.chassis?.drivetrain,
+            wheelbase: String(cfg.chassis?.wheelbase || ''),
+            gvwr: String(cfg.chassis?.gvwr || ''),
+            powertrain: (cfg.chassis?.powertrain || 'Gas')
+          },
+          bodySpecs: cfg.bodySpecs || {},
+          upfitter: cfg.upfitter ? { id: cfg.upfitter.id, name: cfg.upfitter.name } : undefined,
+        },
+        pricing: {
+          chassisMsrp: Math.round(p.chassisMSRP || 0),
+          bodyPrice: Math.round(p.bodyPrice || 0),
+          optionsPrice: Math.round(p.optionsPrice || 0),
+          labor: Math.round(p.laborPrice || 0),
+          freight: Math.round(p.freight || 1500),
+          incentives: (p.incentives || []).map(id => ({ code: String(id), label: String(id), amount: 0 })),
+          taxes: Math.round(p.taxes || 0),
+          total: Math.round(p.total || 0)
+        }
+      }
+      await intakeOrder(payload)
+      navigate('/ordermanagement')
     } catch (error) {
       console.error('Error submitting order:', error)
     }

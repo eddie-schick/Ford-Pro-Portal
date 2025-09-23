@@ -19,6 +19,7 @@ import { getChassis, getBodies, getOptions, getIncentives } from '@/api/routes'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Home, RotateCcw } from 'lucide-react'
+import { intakeOrder } from '@/lib/orderApi'
 
 export function ConfiguratorReview() {
   const navigate = useNavigate()
@@ -47,6 +48,8 @@ export function ConfiguratorReview() {
     window.scrollTo(0, 0)
   }, [])
   const [orderSubmitted, setOrderSubmitted] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
 
   // Redirect to first incomplete step instead of jumping to step 1 always
   useEffect(() => {
@@ -154,6 +157,55 @@ export function ConfiguratorReview() {
     navigate('/')
   }
 
+  const mapToIntakePayload = () => {
+    const cfg = configuration
+    const pricing = cfg.pricing || {}
+    return {
+      dealerCode: cfg.dealerCode || 'DEMO',
+      upfitterId: cfg.upfitter?.id,
+      isStock: Boolean(cfg.isStock),
+      build: {
+        bodyType: cfg.bodyType,
+        manufacturer: cfg.bodyManufacturer,
+        chassis: {
+          series: cfg.chassis?.series,
+          cab: cfg.chassis?.cab,
+          drivetrain: cfg.chassis?.drivetrain,
+          wheelbase: String(cfg.chassis?.wheelbase || ''),
+          gvwr: String(cfg.chassis?.gvwr || ''),
+          powertrain: (cfg.chassis?.powertrain || 'Gas')
+        },
+        bodySpecs: cfg.bodySpecs || {},
+        upfitter: cfg.upfitter ? { id: cfg.upfitter.id, name: cfg.upfitter.name } : undefined,
+      },
+      pricing: {
+        chassisMsrp: Math.round(pricing.chassisMSRP || 0),
+        bodyPrice: Math.round(pricing.bodyPrice || 0),
+        optionsPrice: Math.round(pricing.optionsPrice || 0),
+        labor: Math.round(pricing.laborPrice || 0),
+        freight: Math.round(pricing.freight || 0),
+        incentives: (pricing.incentives || []).map(id => ({ code: String(id), label: String(id), amount: 0 })),
+        taxes: Math.round(pricing.taxes || 0),
+        total: Math.round(pricing.total || 0)
+      }
+    }
+  }
+
+  const handleSubmit = async () => {
+    setSubmitError('')
+    setSubmitting(true)
+    try {
+      const payload = mapToIntakePayload()
+      await intakeOrder(payload)
+      setOrderSubmitted(true)
+    } catch (e) {
+      console.error('Submit failed', e)
+      setSubmitError(e?.message || 'Submit failed')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   // Mark step as completed
   useEffect(() => {
     if (!configuration.completedSteps?.includes(7)) {
@@ -221,8 +273,13 @@ export function ConfiguratorReview() {
       {!orderSubmitted && (
         <StickyActions
           onBack={handleBack}
-          showContinue={false}
+          onContinue={handleSubmit}
+          continueLabel={submitting ? 'Submitting…' : 'Send to Order Management'}
+          disableContinue={submitting}
         />
+      )}
+      {submitError && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-3 text-red-600 text-sm">{submitError}</div>
       )}
     </div>
   )

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input.jsx'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.jsx'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx'
 import { AspectRatio } from '@/components/ui/aspect-ratio.jsx'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu.jsx'
 import UpfitterLogo from './components/UpfitterLogo.jsx'
 import { Stepper } from './components/Stepper.jsx'
 import { StickyActions } from './components/Layout/StickyActions.jsx'
@@ -30,7 +31,8 @@ import {
   Menu,
   X,
   Circle,
-  ArrowRight
+  ArrowRight,
+  ChevronDown
 } from 'lucide-react'
 import './App.css'
 import { demoInventory, demoBodies } from '@/lib/demo-data.js'
@@ -115,7 +117,7 @@ function Header() {
   const navigation = [
     { name: 'Catalog', href: '/', icon: ShoppingCart },
     { name: 'Order Management', href: '/ordermanagement', icon: Building2 },
-    { name: 'Find an Upfitter', href: '/upfitter', icon: Wrench },
+    { name: 'Documentation', href: '/documentation', icon: Wrench },
   ]
 
   return (
@@ -413,20 +415,26 @@ function ChassisCard({ chassis }) {
           </AspectRatio>
           <div>
             <div className="text-sm text-gray-700 mb-2 font-medium">Common bodies</div>
-            <div className="flex flex-wrap gap-2">
-              {getBodiesForChassis(chassis).map((bt) => (
-                <span key={bt} className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs bg-white shadow-sm">
-                  <span className="inline-flex items-center justify-center rounded-full bg-blue-50 text-blue-700 border border-blue-200 w-5 h-5">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="w-full justify-between">
+                  Recommended Body Types
+                  <ChevronDown className="w-4 h-4 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56">
+                {getBodiesForChassis(chassis).map((bt) => (
+                  <DropdownMenuItem key={bt}>
                     <Circle className="w-3 h-3" />
-                  </span>
-                  {bt}
-                </span>
-              ))}
-            </div>
+                    {bt}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
         <div className="mt-auto pt-2">
-          <div className="text-sm text-gray-500 mb-2">{chassis.description}</div>
+          <div className="text-sm text-gray-500 mb-2 min-h-[48px]">{chassis.description}</div>
           <div className="flex justify-end">
             <Button size="sm" onClick={handleConfigure}>Configure</Button>
           </div>
@@ -598,13 +606,13 @@ function Configurator() {
   return null
 }
 
-// Upfitter Portal Component  
-function UpfitterPortal() {
+// Documentation Page (placeholder)
+function DocumentationPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
       <div className="text-center py-24 border rounded-lg bg-white">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Find an Upfitter</h1>
-        <p className="text-gray-600">Coming Soon</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Documentation</h1>
+        <p className="text-gray-600">Documentation coming Soon</p>
       </div>
     </div>
   )
@@ -645,7 +653,7 @@ function App() {
             <Route path="/configurator/upfitter" element={<ConfiguratorUpfitter />} />
             <Route path="/configurator/pricing" element={<ConfiguratorPricing />} />
             <Route path="/configurator/review" element={<ConfiguratorReview />} />
-            <Route path="/upfitter" element={<UpfitterPortal />} />
+          <Route path="/documentation" element={<DocumentationPage />} />
           </Routes>
         </main>
         <Footer />

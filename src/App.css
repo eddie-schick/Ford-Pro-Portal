@@ -148,10 +148,12 @@
   will-change: transform, opacity;
 }
 
-/* Ensure absolute rotating words align left and vertically with heading baseline */
+/* Center rotating words under the title */
 .rotate-word {
-  display: inline-block;
-  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 /* Subtle animated hero background band */
@@ -194,8 +196,5 @@
   100% { transform: translateX(-5%); }
 }
 
-/* Center the whole headline block while visually nudging Ford X left */
-.headline-offset {
-  position: relative;
-  left: -3.5ch; /* subtle extra left shift */
-}
+/* Deprecated: headline-offset no longer used after centering header */
+.headline-offset { left: 0; position: static; }

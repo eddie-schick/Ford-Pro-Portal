@@ -1,6 +1,6 @@
-// Minimal client for Order Management API (served by the order-portal app)
-
-const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_ORDER_API_BASE) || ''
+// Minimal client for Order Management API now served by the Vite dev/preview middleware
+// Always use relative paths so the same origin Vite server handles requests.
+const API_BASE = ''
 
 async function http(path, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, {

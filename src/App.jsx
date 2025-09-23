@@ -414,7 +414,6 @@ function ChassisCard({ chassis }) {
             </div>
           </AspectRatio>
           <div>
-            <div className="text-sm text-gray-700 mb-2 font-medium">Common bodies</div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="w-full justify-between">

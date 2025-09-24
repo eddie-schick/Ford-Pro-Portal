@@ -1,5 +1,103 @@
 [
   {
+    "id": "ord_zltq16",
+    "dealerCode": "DEMO",
+    "upfitterId": "knapheide-detroit",
+    "status": "CONFIG_RECEIVED",
+    "oemEta": null,
+    "upfitterEta": null,
+    "deliveryEta": null,
+    "buildJson": {
+      "bodyType": "Dry Freight Body",
+      "manufacturer": "Morgan Truck Body",
+      "chassis": {
+        "series": "F-450",
+        "cab": "Regular Cab",
+        "drivetrain": "4x2",
+        "wheelbase": "164",
+        "gvwr": "",
+        "powertrain": "gas-7.3L"
+      },
+      "bodySpecs": {
+        "bedLength": "16",
+        "material": "Aluminum",
+        "sideHeight": "24",
+        "hoistType": "Scissor",
+        "length": "10",
+        "height": "84",
+        "doorType": "Roll-up"
+      },
+      "upfitter": {
+        "id": "knapheide-detroit"
+      }
+    },
+    "pricingJson": {
+      "chassisMsrp": 48000,
+      "bodyPrice": 11000,
+      "optionsPrice": 0,
+      "labor": 1500,
+      "freight": 1500,
+      "incentives": [],
+      "taxes": 5425,
+      "total": 67425
+    },
+    "isStock": false,
+    "listingStatus": null,
+    "createdAt": "2025-09-23T23:11:23.540Z",
+    "updatedAt": "2025-09-23T23:11:23.540Z"
+  },
+  {
+    "id": "ord_q3s0fy",
+    "dealerCode": "DEMO",
+    "upfitterId": "knapheide-detroit",
+    "status": "CONFIG_RECEIVED",
+    "oemEta": null,
+    "upfitterEta": null,
+    "deliveryEta": null,
+    "buildJson": {
+      "bodyType": "Dump Body",
+      "manufacturer": "Rugby Manufacturing",
+      "chassis": {
+        "series": "F-450",
+        "cab": "Regular Cab",
+        "drivetrain": "4x2",
+        "wheelbase": "192",
+        "gvwr": "",
+        "powertrain": "diesel-6.7L"
+      },
+      "bodySpecs": {
+        "bedLength": "10",
+        "material": "Aluminum",
+        "sideHeight": "36",
+        "hoistType": "Telescopic",
+        "type": "Type I",
+        "moduleLength": "144",
+        "equipment": "Basic Life Support",
+        "length": "26",
+        "height": "102",
+        "doorType": "Swing",
+        "interiorOptions": "Logistics Posts"
+      },
+      "upfitter": {
+        "id": "knapheide-detroit"
+      }
+    },
+    "pricingJson": {
+      "chassisMsrp": 56000,
+      "bodyPrice": 12000,
+      "optionsPrice": 2500,
+      "labor": 1800,
+      "freight": 1500,
+      "incentives": [],
+      "taxes": 6458,
+      "total": 80258
+    },
+    "isStock": false,
+    "listingStatus": null,
+    "createdAt": "2025-09-23T22:26:14.554Z",
+    "updatedAt": "2025-09-23T22:26:14.554Z"
+  },
+  {
     "id": "ord_ctuj5m",
     "dealerCode": "DEMO",
     "upfitterId": null,

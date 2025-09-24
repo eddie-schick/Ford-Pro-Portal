@@ -37,6 +37,7 @@ import {
 import './App.css'
 import { demoInventory, demoBodies } from '@/lib/demo-data.js'
 import AnimatedHeader from './components/AnimatedHeader.jsx'
+import Hero from './components/Hero.jsx'
 
 // Import new configurator pages
 import { ConfiguratorChassisSelection } from './pages/ConfiguratorChassisSelection.jsx'
@@ -121,7 +122,7 @@ function Header() {
   ]
 
   return (
-    <header className="bg-blue-900 text-white shadow-lg">
+    <header className="bg-blue-900 text-white shadow-lg sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           <Link to="/" className="inline-block">
@@ -510,79 +511,87 @@ function Marketplace() {
   })
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Hero Section */}
-      <AnimatedHeader />
+    <>
+      {/* Full-bleed Hero */}
+      <Hero
+        rotatingWords={["Customers", "Dealers", "Upfitters", "Fleets"]}
+        ctaPrimary={{ label: "Explore Catalog", href: "/" }}
+        ctaSecondary={{ label: "Order Management", href: "/ordermanagement" }}
+        showSearch={true}
+      />
 
-      {/* Search Bar */}
-      <div className="max-w-2xl mx-auto mb-8">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-          <Input
-            type="text"
-            placeholder="Search by chassis model or class..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+      {/* Main content container */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Search Bar */}
+        <div id="catalog" className="max-w-2xl mx-auto mb-8">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <Input
+              type="text"
+              placeholder="Search by chassis model or class..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
         </div>
-      </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-4 mb-8 justify-center">
-        <Select value={chassisClassFilter} onValueChange={setChassisClassFilter}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="All Classes" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Classes</SelectItem>
-            <SelectItem value="Class 3">Class 3</SelectItem>
-            <SelectItem value="Class 4">Class 4</SelectItem>
-            <SelectItem value="Class 5">Class 5</SelectItem>
-            <SelectItem value="Class 6">Class 6</SelectItem>
-            <SelectItem value="Class 6/7">Class 6/7</SelectItem>
-            <SelectItem value="Class 7">Class 7</SelectItem>
-          </SelectContent>
-        </Select>
+        {/* Filters */}
+        <div className="flex flex-wrap gap-4 mb-8 justify-center">
+          <Select value={chassisClassFilter} onValueChange={setChassisClassFilter}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="All Classes" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Classes</SelectItem>
+              <SelectItem value="Class 3">Class 3</SelectItem>
+              <SelectItem value="Class 4">Class 4</SelectItem>
+              <SelectItem value="Class 5">Class 5</SelectItem>
+              <SelectItem value="Class 6">Class 6</SelectItem>
+              <SelectItem value="Class 6/7">Class 6/7</SelectItem>
+              <SelectItem value="Class 7">Class 7</SelectItem>
+            </SelectContent>
+          </Select>
 
-        <Select value={vocationFilter} onValueChange={setVocationFilter}>
-          <SelectTrigger className="w-56">
-            <SelectValue placeholder="All Vocations" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Vocations</SelectItem>
-            {VOCATION_OPTIONS.map(v => (
-              <SelectItem key={v} value={v}>{v}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <Select value={vocationFilter} onValueChange={setVocationFilter}>
+            <SelectTrigger className="w-56">
+              <SelectValue placeholder="All Vocations" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Vocations</SelectItem>
+              {VOCATION_OPTIONS.map(v => (
+                <SelectItem key={v} value={v}>{v}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <Select value={bodyTypeFilter} onValueChange={setBodyTypeFilter}>
-          <SelectTrigger className="w-64">
-            <SelectValue placeholder="All Body Types" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Body Types</SelectItem>
-            {BODY_TYPE_OPTIONS.map(bt => (
-              <SelectItem key={bt} value={bt}>{bt}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Chassis Catalog Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCatalog.map((ch) => (
-          <ChassisCard key={ch.id} chassis={ch} />
-        ))}
-      </div>
-
-      {filteredCatalog.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500">No chassis found matching your criteria.</p>
+          <Select value={bodyTypeFilter} onValueChange={setBodyTypeFilter}>
+            <SelectTrigger className="w-64">
+              <SelectValue placeholder="All Body Types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Body Types</SelectItem>
+              {BODY_TYPE_OPTIONS.map(bt => (
+                <SelectItem key={bt} value={bt}>{bt}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-      )}
-    </div>
+
+        {/* Chassis Catalog Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredCatalog.map((ch) => (
+            <ChassisCard key={ch.id} chassis={ch} />
+          ))}
+        </div>
+
+        {filteredCatalog.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500">No chassis found matching your criteria.</p>
+          </div>
+        )}
+      </div>
+    </>
   )
 }
 

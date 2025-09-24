@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+// Removed leasing tabs per requirements
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Slider } from '@/components/ui/slider'
@@ -27,6 +27,7 @@ export function PriceSummary({
     term: 60,
     downPayment: 20
   })
+  const [enableFinancing, setEnableFinancing] = useState(Boolean(configuration.financing?.enabled) || false)
 
   // Compute pricing and load incentives when core config changes (not when user tweaks finance inputs)
   useEffect(() => {
@@ -162,7 +163,8 @@ export function PriceSummary({
       prevFinancing.downPayment !== financingOptions.downPayment ||
       prevFinancing.monthlyPayment !== monthlyPayment ||
       prevFinancing.downPaymentAmount !== downPaymentAmount ||
-      prevFinancing.financeAmount !== financeAmount
+      prevFinancing.financeAmount !== financeAmount ||
+      Boolean(prevFinancing.enabled) !== Boolean(enableFinancing)
     )
     if (pricingChanged || financingChanged) {
       onChange({
@@ -174,11 +176,12 @@ export function PriceSummary({
           ...financingOptions,
           monthlyPayment,
           downPaymentAmount,
-          financeAmount
+          financeAmount,
+          enabled: enableFinancing
         }
       })
     }
-  }, [pricing, financingOptions, monthlyPayment, downPaymentAmount, financeAmount, selectedIncentives, configuration])
+  }, [pricing, financingOptions, monthlyPayment, downPaymentAmount, financeAmount, selectedIncentives, configuration, enableFinancing])
 
   const toggleIncentive = (incentiveId) => {
     setSelectedIncentives(prev => 
@@ -361,13 +364,27 @@ export function PriceSummary({
           <CardDescription>Calculate your monthly payment</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="finance" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="finance">Finance</TabsTrigger>
-              <TabsTrigger value="lease">Lease</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="finance" className="space-y-4">
+          {/* Finance toggle */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div>
+              <Label htmlFor="enableFinancing">Financing?</Label>
+              <Select
+                value={enableFinancing ? 'yes' : 'no'}
+                onValueChange={(value) => setEnableFinancing(value === 'yes')}
+              >
+                <SelectTrigger id="enableFinancing">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="yes">Yes</SelectItem>
+                  <SelectItem value="no">No</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {enableFinancing && (
+            <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="creditTier">Credit Tier</Label>
@@ -460,58 +477,8 @@ export function PriceSummary({
                   </div>
                 </AlertDescription>
               </Alert>
-            </TabsContent>
-            
-            <TabsContent value="lease" className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="lease-term">Lease Term</Label>
-                  <Select
-                    defaultValue="36"
-                    onValueChange={(value) => setFinancingOptions(prev => ({ ...prev, term: parseInt(value) }))}
-                  >
-                    <SelectTrigger id="lease-term">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="24">24 months</SelectItem>
-                      <SelectItem value="36">36 months</SelectItem>
-                      <SelectItem value="48">48 months</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="lease-mileage">Annual Mileage</Label>
-                  <Select defaultValue="15000">
-                    <SelectTrigger id="lease-mileage">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="10000">10,000</SelectItem>
-                      <SelectItem value="12000">12,000</SelectItem>
-                      <SelectItem value="15000">15,000</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="lease-money">Money Factor</Label>
-                  <Input
-                    id="lease-money"
-                    type="number"
-                    defaultValue={0.0025}
-                    step="0.0001"
-                    onChange={(e) => setFinancingOptions(prev => ({ ...prev, apr: parseFloat(e.target.value) * 2400 }))}
-                  />
-                </div>
-              </div>
-              <Alert className="bg-blue-50 border-blue-200">
-                <AlertDescription>
-                  Lease calculator uses money factor and residual assumptions. For demo purposes,
-                  we approximate monthly payment with the same payment formula.
-                </AlertDescription>
-              </Alert>
-            </TabsContent>
-          </Tabs>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

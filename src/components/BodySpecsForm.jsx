@@ -685,21 +685,36 @@ export function BodySpecsForm({
             {renderBodyFields()}
           </div>
           
-          {/* Price estimate based on selections */}
-          {specs.length || specs.bedLength || specs.boxLength || specs.workingHeight ? (
-            <Alert className="mt-4">
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                <div className="font-medium">Base Price Estimate</div>
-                <div className="text-2xl font-bold text-green-600">
-                  ${(bodyData.basePrice[specs.length || specs.bedLength || specs.boxLength || specs.workingHeight] || 0).toLocaleString()}
-                </div>
-                <div className="text-xs text-gray-600">
-                  * Does not include accessories or installation
-                </div>
-              </AlertDescription>
-            </Alert>
-          ) : null}
+          {/* Price estimate based on selections (always mirrors body cost) */}
+          {(() => {
+            const baseTable = bodyData?.basePrice || {}
+            const selectedKey = (
+              specs.length ??
+              specs.bedLength ??
+              specs.boxLength ??
+              specs.bodyLength ??
+              specs.deckLength ??
+              specs.workingHeight ??
+              specs.moduleLength ??
+              specs.type // for Ambulance (Type I/II/III)
+            )
+            const fallbackKey = Object.keys(baseTable)[0]
+            const price = baseTable[selectedKey] ?? baseTable[fallbackKey] ?? 0
+            return (
+              <Alert className="mt-4">
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  <div className="font-medium">Base Price Estimate</div>
+                  <div className="text-2xl font-bold text-green-600">
+                    ${price.toLocaleString()}
+                  </div>
+                  <div className="text-xs text-gray-600">
+                    * Does not include accessories or installation
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )
+          })()}
         </CardContent>
       </Card>
 

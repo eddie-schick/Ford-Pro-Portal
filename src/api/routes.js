@@ -180,6 +180,66 @@ export const exportPDFQuote = async (buildData) => {
   const freight = Math.round(p.freight ?? 1500)
   const taxes = Math.round(p.taxes ?? 0)
   const fmt = (n) => `$${Math.round(n || 0).toLocaleString()}`
+  const defaultChassisLeadTime = (series) => ({
+    'F-350': '8–12 weeks',
+    'F-450': '10–14 weeks',
+    'F-550': '12–16 weeks',
+    'F-600': '14–18 weeks',
+    'F-650': '16–20 weeks',
+    'F-750': '16–22 weeks',
+    'E-350': '6–10 weeks',
+    'E-450': '6–10 weeks',
+    'Transit': '4–8 weeks',
+    'E-Transit': '6–10 weeks',
+  }[series] || '6–12 weeks')
+
+  const parseWeeks = (text) => {
+    if (!text) return null
+    try {
+      const nums = (text.match(/\d+/g) || []).map(n => parseInt(n, 10))
+      if (nums.length === 1) return { min: nums[0], max: nums[0] }
+      if (nums.length >= 2) return { min: nums[0], max: nums[1] }
+    } catch (_) {}
+    return null
+  }
+  const chassisEtaText = buildData.chassis?.leadTime || defaultChassisLeadTime(buildData.chassis?.series)
+  const chassisEta = parseWeeks(chassisEtaText)
+  const upfitterEta = parseWeeks(buildData.upfitter?.leadTime)
+  const finalDeliveryETA = (() => {
+    if (chassisEta && upfitterEta) {
+      return `${chassisEta.min + upfitterEta.min}\u2013${chassisEta.max + upfitterEta.max} weeks`
+    }
+    if (chassisEta) return `${chassisEta.min}\u2013${chassisEta.max} weeks`
+    if (upfitterEta) return `${upfitterEta.min}\u2013${upfitterEta.max} weeks`
+    return '—'
+  })()
+
+  // Resolve upfitter details when only id is present
+  const resolvedUpfitter = (() => {
+    const uf = buildData.upfitter
+    if (!uf) return null
+    if (typeof uf === 'object' && uf.name) return uf
+    const id = typeof uf === 'object' ? uf.id : uf
+    return (upfittersData?.upfitters || []).find(u => u.id === id) || uf
+  })()
+
+  // Financing defaults and calculations
+  const financingEnabled = Boolean(buildData.financing?.enabled)
+  const aprPercent = (buildData.financing?.apr ?? 6.99)
+  const termMonths = (buildData.financing?.term ?? 60)
+  const downPaymentFraction = (() => {
+    const dp = buildData.financing?.downPayment ?? 0.2
+    return dp > 1 ? dp / 100 : dp
+  })()
+  const downPaymentAmount = Math.round((p.total ?? 0) * downPaymentFraction)
+  const monthlyPayment = (() => {
+    const total = Math.round(p.total ?? 0)
+    const principal = total - downPaymentAmount
+    const apr = aprPercent / 100 / 12
+    if (apr === 0) return Math.round(principal / termMonths)
+    const payment = principal * (apr * Math.pow(1 + apr, termMonths)) / (Math.pow(1 + apr, termMonths) - 1)
+    return Math.round(payment)
+  })()
   const html = `<!doctype html>
   <html>
     <head>
@@ -196,6 +256,10 @@ export const exportPDFQuote = async (buildData) => {
         .header { display:flex; align-items:center; justify-content: space-between; gap:12px; }
         .logo { height:64px; width:auto; object-fit:contain; }
         .amount { min-width: 140px; text-align: right; font-weight: 600; }
+        .sig-row { display:flex; gap:16px; align-items:flex-end; margin-top:8px; }
+        .sig-col { flex:1; }
+        .sig-line { border-bottom: 1px solid #e5e7eb; height: 28px; }
+        .sig-label { color:#6b7280; font-size:12px; margin-top:4px; }
       </style>
     </head>
     <body>
@@ -207,39 +271,77 @@ export const exportPDFQuote = async (buildData) => {
       <div class="muted">Quote #: ${Date.now()}</div>
 
       <div class="card">
-        <h2>Chassis Configuration</h2>
+        <h2>Chassis Specifications</h2>
         <div class="row"><span>Series</span><span>${buildData.chassis?.series || '—'}</span></div>
         <div class="row"><span>Cab</span><span>${buildData.chassis?.cab || '—'}</span></div>
         <div class="row"><span>Drivetrain</span><span>${buildData.chassis?.drivetrain || '—'}</span></div>
         <div class="row"><span>Wheelbase</span><span>${buildData.chassis?.wheelbase ? buildData.chassis.wheelbase + '"' : '—'}</span></div>
         <div class="row"><span>Powertrain</span><span>${buildData.chassis?.powertrain || '—'}</span></div>
+        <div class="row"><span>Chassis ETA</span><span>${buildData.chassis?.leadTime || defaultChassisLeadTime(buildData.chassis?.series)}</span></div>
       </div>
 
       <div class="card">
-        <h2>Body Configuration</h2>
+        <h2>Chassis Delivery ETA</h2>
+        <div>${buildData.chassis?.leadTime || defaultChassisLeadTime(buildData.chassis?.series)}</div>
+      </div>
+
+      <div class="card">
+        <h2>Body Specifications</h2>
         <div class="row"><span>Body Type</span><span>${buildData.bodyType || '—'}</span></div>
         <div class="row"><span>Manufacturer</span><span>${buildData.bodyManufacturer || '—'}</span></div>
         ${bodySpecsHtml}
       </div>
 
+      
+
       <div class="card">
-        <h2>Upfitter</h2>
-        <div>${buildData.upfitter?.name || ''}</div>
-        <div>${buildData.upfitter?.address || ''}</div>
-        <div>Lead Time: ${buildData.upfitter?.leadTime || ''}</div>
+        <h2>Upfitter/Installer</h2>
+        <div>${resolvedUpfitter?.name || ''}</div>
+        <div>${resolvedUpfitter?.address || ''}</div>
+        <div>${resolvedUpfitter?.phone || ''}</div>
+        <div>Lead Time: ${resolvedUpfitter?.leadTime || ''}</div>
       </div>
 
       <div class="card">
-        <h2>Pricing</h2>
+        <h2>Final Delivery ETA</h2>
+        <div>${finalDeliveryETA}</div>
+      </div>
+
+      <div class="card">
+        <h2>Pricing Summary</h2>
         <div class="row"><span>Chassis MSRP</span><span class="amount">${fmt(p.chassisMSRP)}</span></div>
         <div class="row"><span>Body & Equipment</span><span class="amount">${fmt(p.bodyPrice)}</span></div>
-        <div class="row"><span>Options</span><span class="amount">${fmt(p.optionsPrice)}</span></div>
+        ${p.optionsPrice ? `<div class="row"><span>Options</span><span class="amount">${fmt(p.optionsPrice)}</span></div>` : ''}
         <div class="row"><span>Labor/Install</span><span class="amount">${fmt(p.laborPrice)}</span></div>
         <div class="row"><span>Freight & Delivery</span><span class="amount">${fmt(freight)}</span></div>
         <div class="row"><span>Subtotal</span><span class="amount">${fmt(p.subtotal)}</span></div>
-        <div class="row"><span>Incentives</span><span class="amount">-${fmt(p.totalIncentives)}</span></div>
+        ${p.totalIncentives ? `<div class="row"><span>Incentives</span><span class="amount">-${fmt(p.totalIncentives)}</span></div>` : ''}
         <div class="row"><span>Estimated Taxes (8.75%)</span><span class="amount">${fmt(taxes)}</span></div>
         <div class="row tot"><span>Estimated Total</span><span class="amount">${fmt(p.total)}</span></div>
+      </div>
+
+      ${financingEnabled ? `
+      <div class="card">
+        <h2>Financing Details</h2>
+        <div class="row"><span>APR</span><span class="amount">${aprPercent}%</span></div>
+        <div class="row"><span>Term</span><span class="amount">${termMonths} months</span></div>
+        <div class="row"><span>Down Payment</span><span class="amount">${fmt(downPaymentAmount)} (${Math.round(downPaymentFraction*100)}%)</span></div>
+        <div class="row tot"><span>Est. Monthly Payment</span><span class="amount">${fmt(monthlyPayment)}/mo</span></div>
+      </div>
+      ` : ''}
+
+      <div class="card">
+        <h2>Purchaser Signature</h2>
+        <div class="sig-row">
+          <div class="sig-col">
+            <div class="sig-line"></div>
+            <div class="sig-label">Signature</div>
+          </div>
+          <div class="sig-col" style="max-width:220px;">
+            <div class="sig-line"></div>
+            <div class="sig-label">Date</div>
+          </div>
+        </div>
       </div>
       <script>
         window.onload = () => {

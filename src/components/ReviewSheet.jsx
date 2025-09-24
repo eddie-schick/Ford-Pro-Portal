@@ -3,11 +3,11 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 // Removed decorative icons for a cleaner, icon-free configurator experience
-import { submitOrder, exportPDFQuote, emailQuote, getChassis, getBodies, getOptions } from '@/api/routes'
+import { submitOrder, exportPDFQuote, emailQuote, getChassis, getBodies, getOptions, getUpfitters } from '@/api/routes'
 import { intakeOrder } from '@/lib/orderApi'
 import { useNavigate } from 'react-router-dom'
 import { Check } from 'lucide-react'
-import { calculatePricing } from '@/lib/configurationStore'
+import { calculatePricing, calculateMonthlyPayment } from '@/lib/configurationStore'
 import { useEffect, useMemo, useState } from 'react'
 
 export function ReviewSheet({ configuration }) {
@@ -16,6 +16,7 @@ export function ReviewSheet({ configuration }) {
   const [orderNumber, setOrderNumber] = useState(null)
   const [emailSent, setEmailSent] = useState(false)
   const [viewPricing, setViewPricing] = useState(null)
+  const [hydratedUpfitter, setHydratedUpfitter] = useState(configuration.upfitter || null)
 
   // Derive pricing snapshot so the review page mirrors Step 6 even if saved state was partial
   useEffect(() => {
@@ -50,6 +51,24 @@ export function ReviewSheet({ configuration }) {
     compute()
   }, [configuration])
 
+  // Hydrate upfitter details if only an id is present
+  useEffect(() => {
+    const hydrate = async () => {
+      try {
+        if (configuration.upfitter && (!configuration.upfitter.name || !configuration.upfitter.leadTime)) {
+          const list = await getUpfitters({})
+          const found = list.find(u => u.id === (configuration.upfitter.id || configuration.upfitter))
+          setHydratedUpfitter(found || configuration.upfitter)
+        } else {
+          setHydratedUpfitter(configuration.upfitter || null)
+        }
+      } catch (e) {
+        setHydratedUpfitter(configuration.upfitter || null)
+      }
+    }
+    hydrate()
+  }, [configuration.upfitter])
+
   // Helpers to read pricing from either saved config or derived snapshot
   const pricingDisplay = useMemo(() => {
     const p = configuration.pricing || {}
@@ -64,6 +83,53 @@ export function ReviewSheet({ configuration }) {
       total: p.total ?? viewPricing?.total ?? 0
     }
   }, [configuration.pricing, viewPricing])
+
+  // Defaults and helpers
+  const defaultChassisLeadTime = (series) => ({
+    'F-350': '8–12 weeks',
+    'F-450': '10–14 weeks',
+    'F-550': '12–16 weeks',
+    'F-600': '14–18 weeks',
+    'F-650': '16–20 weeks',
+    'F-750': '16–22 weeks',
+    'E-350': '6–10 weeks',
+    'E-450': '6–10 weeks',
+    'Transit': '4–8 weeks',
+    'E-Transit': '6–10 weeks',
+  }[series] || '6–12 weeks')
+
+  const aprPercent = (configuration.financing?.apr ?? 6.99)
+  const termMonths = (configuration.financing?.term ?? 60)
+  const downPaymentFraction = (() => {
+    const dp = configuration.financing?.downPayment ?? 0.2
+    return dp > 1 ? dp / 100 : dp
+  })()
+  const downPaymentAmount = Math.round(pricingDisplay.total * downPaymentFraction)
+  const monthlyPayment = Math.round(
+    calculateMonthlyPayment(pricingDisplay.total, aprPercent, termMonths, downPaymentFraction) || 0
+  )
+
+  // ETA helpers
+  const parseWeeks = (text) => {
+    if (!text) return null
+    try {
+      const nums = (text.match(/\d+/g) || []).map(n => parseInt(n, 10))
+      if (nums.length === 1) return { min: nums[0], max: nums[0] }
+      if (nums.length >= 2) return { min: nums[0], max: nums[1] }
+    } catch (_) { /* noop */ }
+    return null
+  }
+  const chassisEtaText = configuration.chassis?.leadTime || defaultChassisLeadTime(configuration.chassis?.series)
+  const chassisEta = parseWeeks(chassisEtaText)
+  const upfitterEta = parseWeeks(hydratedUpfitter?.leadTime)
+  const finalDeliveryETA = (() => {
+    if (chassisEta && upfitterEta) {
+      return `${chassisEta.min + upfitterEta.min}\u2013${chassisEta.max + upfitterEta.max} weeks`
+    }
+    if (chassisEta) return `${chassisEta.min}\u2013${chassisEta.max} weeks`
+    if (upfitterEta) return `${upfitterEta.min}\u2013${upfitterEta.max} weeks`
+    return '—'
+  })()
 
   const handleExportPDF = async () => {
     try {
@@ -214,128 +280,76 @@ export function ReviewSheet({ configuration }) {
           <div>
             <h3 className="font-semibold mb-3">Chassis Specifications</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm bg-gray-50 p-4 rounded-lg">
-              <div className="flex justify-between"><span className="text-gray-600">Series</span><span className="font-medium">{configuration.chassis.series || '—'}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Cab</span><span className="font-medium">{configuration.chassis.cab || '—'}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Drivetrain</span><span className="font-medium">{configuration.chassis.drivetrain || '—'}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Wheelbase</span><span className="font-medium">{configuration.chassis.wheelbase ? `${configuration.chassis.wheelbase}"` : '—'}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Suspension</span><span className="font-medium">{configuration.chassis.suspensionPackage || '—'}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Powertrain</span><span className="font-medium">{configuration.chassis.powertrain || '—'}</span></div>
+              <div className="grid grid-cols-2 gap-2"><span className="text-gray-600">Series</span><span className="font-medium">{configuration.chassis.series || '—'}</span></div>
+              <div className="grid grid-cols-2 gap-2"><span className="text-gray-600">Cab</span><span className="font-medium">{configuration.chassis.cab || '—'}</span></div>
+              <div className="grid grid-cols-2 gap-2"><span className="text-gray-600">Drivetrain</span><span className="font-medium">{configuration.chassis.drivetrain || '—'}</span></div>
+              <div className="grid grid-cols-2 gap-2"><span className="text-gray-600">Wheelbase</span><span className="font-medium">{configuration.chassis.wheelbase ? `${configuration.chassis.wheelbase}"` : '—'}</span></div>
+              <div className="grid grid-cols-2 gap-2"><span className="text-gray-600">Suspension</span><span className="font-medium">{configuration.chassis.suspensionPackage || '—'}</span></div>
+              <div className="grid grid-cols-2 gap-2"><span className="text-gray-600">Powertrain</span><span className="font-medium">{configuration.chassis.powertrain || '—'}</span></div>
               {/* Dummy extended specs that vary by series */}
-              <div className="flex justify-between"><span className="text-gray-600">GVWR</span><span className="font-medium">{({ 'F-350':'12,000–14,000 lbs','F-450':'14,000–16,500 lbs','F-550':'17,500–19,500 lbs','F-600':'22,000 lbs','F-650':'25,600–29,000 lbs','F-750':'Up to 37,000 lbs','E-350':'10,050–12,700 lbs','E-450':'Up to 14,500 lbs' }[configuration.chassis.series] || '—')}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Fuel Type</span><span className="font-medium">{configuration.chassis.powertrain?.toLowerCase?.().includes('diesel') ? 'Diesel' : 'Gasoline'}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Axle Ratio</span><span className="font-medium">{configuration.chassis.drivetrain?.includes('4x4') ? '4.30' : '3.73'}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Towing (est.)</span><span className="font-medium">{configuration.chassis.series?.startsWith('F-6') ? '25,000+ lbs' : configuration.chassis.series?.startsWith('F-5') ? '20,000+ lbs' : '15,000+ lbs'}</span></div>
+              <div className="grid grid-cols-2 gap-2"><span className="text-gray-600">GVWR</span><span className="font-medium">{({ 'F-350':'12,000–14,000 lbs','F-450':'14,000–16,500 lbs','F-550':'17,500–19,500 lbs','F-600':'22,000 lbs','F-650':'25,600–29,000 lbs','F-750':'Up to 37,000 lbs','E-350':'10,050–12,700 lbs','E-450':'Up to 14,500 lbs' }[configuration.chassis.series] || '—')}</span></div>
+              <div className="grid grid-cols-2 gap-2"><span className="text-gray-600">Fuel Type</span><span className="font-medium">{configuration.chassis.powertrain?.toLowerCase?.().includes('diesel') ? 'Diesel' : 'Gasoline'}</span></div>
+              <div className="grid grid-cols-2 gap-2"><span className="text-gray-600">Axle Ratio</span><span className="font-medium">{configuration.chassis.drivetrain?.includes('4x4') ? '4.30' : '3.73'}</span></div>
+              <div className="grid grid-cols-2 gap-2"><span className="text-gray-600">Towing (est.)</span><span className="font-medium">{configuration.chassis.series?.startsWith('F-6') ? '25,000+ lbs' : configuration.chassis.series?.startsWith('F-5') ? '20,000+ lbs' : '15,000+ lbs'}</span></div>
+            </div>
+          </div>
+
+          {/* Chassis Delivery ETA */}
+          <div>
+            <h3 className="font-semibold mb-3">Chassis Delivery ETA</h3>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="text-lg font-medium">{chassisEtaText}</div>
             </div>
           </div>
 
           {/* Body Specs - comprehensive */}
           <div>
             <h3 className="font-semibold mb-3">Body Specifications</h3>
-            <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-              <div className="flex justify-between"><span className="text-gray-600">Body Type</span><span className="font-medium">{configuration.bodyType || '—'}</span></div>
-              {configuration.bodyType !== 'Chassis Only' && (
-                <>
-                  <div className="flex justify-between"><span className="text-gray-600">Manufacturer</span><span className="font-medium">{configuration.bodyManufacturer || '—'}</span></div>
-                  {Object.entries(configuration.bodySpecs || {}).length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {Object.entries(configuration.bodySpecs).map(([key, value]) => (
-                        <div key={key} className="flex justify-between text-sm">
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {/* Force Body Type and Manufacturer into the left column */}
+                <div className="grid grid-cols-2 gap-2 md:col-start-1 md:col-end-2">
+                  <span className="text-gray-600">Body Type</span>
+                  <span className="font-medium">{configuration.bodyType || '—'}</span>
+                </div>
+                {configuration.bodyType !== 'Chassis Only' && (
+                  <div className="grid grid-cols-2 gap-2 md:col-start-1 md:col-end-2">
+                    <span className="text-gray-600">Manufacturer</span>
+                    <span className="font-medium">{configuration.bodyManufacturer || '—'}</span>
+                  </div>
+                )}
+
+                {/* Remaining specs flow into two columns */}
+                {configuration.bodyType !== 'Chassis Only' && (
+                  <>
+                    {Object.entries(configuration.bodySpecs || {}).length > 0 ? (
+                      Object.entries(configuration.bodySpecs).map(([key, value]) => (
+                        <div key={key} className="grid grid-cols-2 text-sm gap-2">
                           <span className="text-gray-600 capitalize">{key.replace(/([A-Z])/g,' $1').trim()}</span>
                           <span className="font-medium">{String(value)}</span>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-sm text-gray-600">No body specifications selected.</div>
-                  )}
-                </>
-              )}
-            </div>
-          </div>
-          {/* Chassis Configuration */}
-          <div>
-            <h3 className="font-semibold mb-3">Chassis Configuration</h3>
-            <div className="grid grid-cols-2 gap-3 text-sm bg-gray-50 p-4 rounded-lg">
-              <div>
-                <span className="text-gray-600">Series:</span>
-                <span className="ml-2 font-medium">{configuration.chassis.series}</span>
-              </div>
-              <div>
-                <span className="text-gray-600">Cab:</span>
-                <span className="ml-2 font-medium">{configuration.chassis.cab}</span>
-              </div>
-              <div>
-                <span className="text-gray-600">Drivetrain:</span>
-                <span className="ml-2 font-medium">{configuration.chassis.drivetrain}</span>
-              </div>
-              <div>
-                <span className="text-gray-600">Wheelbase:</span>
-                <span className="ml-2 font-medium">{configuration.chassis.wheelbase}"</span>
-              </div>
-              <div>
-                <span className="text-gray-600">Suspension:</span>
-                <span className="ml-2 font-medium">{configuration.chassis.suspensionPackage}</span>
-              </div>
-              <div>
-                <span className="text-gray-600">Powertrain:</span>
-                <span className="ml-2 font-medium">{configuration.chassis.powertrain}</span>
+                      ))
+                    ) : (
+                      <div className="text-sm text-gray-600 col-span-1 md:col-span-2">No body specifications selected.</div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           </div>
-
-          {/* Body Configuration */}
-          <div>
-            <h3 className="font-semibold mb-3">Body Configuration</h3>
-            <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Body Type:</span>
-                <span className="font-medium">{configuration.bodyType}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Manufacturer:</span>
-                <span className="font-medium">{configuration.bodyManufacturer}</span>
-              </div>
-              {Object.entries(configuration.bodySpecs || {}).length > 0 && (
-                <div className="border-t pt-3">
-                  <div className="text-sm font-medium mb-2">Specifications:</div>
-                  <div className="space-y-1">
-                    {Object.entries(configuration.bodySpecs).map(([key, value]) => (
-                      <div key={key} className="flex justify-between text-sm">
-                        <span className="text-gray-600 capitalize">
-                          {key.replace(/([A-Z])/g, ' $1').trim()}:
-                        </span>
-                        <span>{value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {configuration.bodyAccessories?.length > 0 && (
-                <div className="border-t pt-3">
-                  <div className="text-sm font-medium mb-2">Accessories:</div>
-                  <div className="flex flex-wrap gap-2">
-                    {configuration.bodyAccessories.map((acc) => (
-                      <Badge key={acc} variant="secondary" className="text-xs">
-                        {acc.replace(/([A-Z])/g, ' $1').trim()}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          
 
           {/* Upfitter */}
           <div>
             <h3 className="font-semibold mb-3">Upfitter/Installer</h3>
             <div className="bg-gray-50 p-4 rounded-lg">
-              {configuration.upfitter ? (
+              {hydratedUpfitter ? (
                 <>
-                  <div className="font-medium">{configuration.upfitter.name}</div>
-                  <div className="text-sm text-gray-600 mt-1">{configuration.upfitter.address}</div>
-                  <div className="text-sm text-gray-600">{configuration.upfitter.phone}</div>
+                  <div className="font-medium">{hydratedUpfitter.name}</div>
+                  <div className="text-sm text-gray-600 mt-1">{hydratedUpfitter.address}</div>
+                  <div className="text-sm text-gray-600">{hydratedUpfitter.phone}</div>
                   <div className="flex gap-2 mt-2">
-                    {configuration.upfitter.certifications?.map((cert) => (
+                    {hydratedUpfitter.certifications?.map((cert) => (
                       <Badge key={cert} variant="outline" className="text-xs">
                         {cert}
                       </Badge>
@@ -343,12 +357,20 @@ export function ReviewSheet({ configuration }) {
                   </div>
                   <div className="text-sm mt-2">
                     <span className="text-gray-600">Lead Time:</span>
-                    <span className="ml-2 font-medium">{configuration.upfitter.leadTime}</span>
+                    <span className="ml-2 font-medium">{hydratedUpfitter.leadTime}</span>
                   </div>
                 </>
               ) : (
                 <p className="text-gray-500">No upfitter selected</p>
               )}
+            </div>
+          </div>
+
+          {/* Final Delivery ETA */}
+          <div>
+            <h3 className="font-semibold mb-3">Final Delivery ETA</h3>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="text-lg font-medium">{finalDeliveryETA}</div>
             </div>
           </div>
 
@@ -392,28 +414,25 @@ export function ReviewSheet({ configuration }) {
           </div>
 
           {/* Financing */}
-          {configuration.financing && (
+              {(configuration.financing?.enabled) && (
             <div>
               <h3 className="font-semibold mb-3">Financing Details</h3>
               <div className="bg-gray-50 p-4 rounded-lg space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">APR:</span>
-                  <span className="font-medium">{configuration.financing.apr}%</span>
+                      <span className="text-gray-600">APR:</span>
+                      <span className="font-medium">{aprPercent}%</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Term:</span>
-                  <span className="font-medium">{configuration.financing.term} months</span>
+                      <span className="text-gray-600">Term:</span>
+                      <span className="font-medium">{termMonths} months</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Down Payment:</span>
-                  <span className="font-medium">
-                    ${Math.round((configuration.financing.downPaymentAmount ?? (pricingDisplay.total * ((configuration.financing.downPayment ?? 0) > 1 ? configuration.financing.downPayment / 100 : (configuration.financing.downPayment ?? 0)) ))).toLocaleString()} 
-                    ({((configuration.financing.downPayment ?? 0) > 1 ? configuration.financing.downPayment : (configuration.financing.downPayment ?? 0) * 100)}%)
-                  </span>
+                      <span className="font-medium">${downPaymentAmount.toLocaleString()} ({(downPaymentFraction * 100)}%)</span>
                 </div>
                 <div className="border-t pt-2 flex justify-between font-bold">
                   <span>Est. Monthly Payment:</span>
-                  <span>${Math.round(configuration.financing.monthlyPayment || 0).toLocaleString()}/mo</span>
+                      <span>${monthlyPayment.toLocaleString()}/mo</span>
                 </div>
               </div>
             </div>

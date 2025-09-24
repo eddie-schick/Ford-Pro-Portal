@@ -30,9 +30,23 @@ export function ConfiguratorReview() {
     const params = new URLSearchParams(location.search)
     if (params.toString()) {
       const parsed = parseQueryToConfig(params)
+      // Preserve full upfitter object from base if parsed only has an id
+      const mergedUpfitter = (() => {
+        const parsedUf = parsed.upfitter
+        if (!parsedUf) return base.upfitter
+        // If parsed contains only an id, keep base object if present
+        if (typeof parsedUf === 'object' && Object.keys(parsedUf).length === 1 && parsedUf.id) {
+          // If base upfitter matches the id, keep it; otherwise store minimal object with id
+          if (base.upfitter && base.upfitter.id === parsedUf.id) return base.upfitter
+          return { id: parsedUf.id }
+        }
+        return parsedUf
+      })()
+
       return {
         ...base,
         ...parsed,
+        upfitter: mergedUpfitter,
         chassis: { ...(base.chassis || {}), ...(parsed.chassis || {}) },
         pricing: { ...(base.pricing || {}), ...(parsed.pricing || {}) },
         financing: { ...(base.financing || {}), ...(parsed.financing || {}) },

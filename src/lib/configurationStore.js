@@ -124,7 +124,8 @@ const queryParamMap = {
   gvwr: 'chassis.gvwrPackage',
   susp: 'chassis.suspensionPackage',
   pt: 'chassis.powertrain',
-  uf: 'upfitter'
+  // Only persist the upfitter id in URLs to avoid clobbering the full object
+  uf: 'upfitter.id'
 }
 
 // Parse URL query parameters to configuration

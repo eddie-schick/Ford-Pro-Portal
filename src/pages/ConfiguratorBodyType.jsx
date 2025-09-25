@@ -32,11 +32,11 @@ const UPFIT_MATRIX = {
     manufacturers: ['Rugby Manufacturing', 'Godwin Group', 'Brandon Manufacturing', 'Downeaster']
   },
   'Dry Freight Body': {
-    chassis: ['E-350', 'E-450', 'F-450', 'F-550', 'F-600', 'F-650'],
+    chassis: ['Transit', 'E-Transit', 'E-350', 'E-450', 'F-450', 'F-550', 'F-600', 'F-650'],
     manufacturers: ['Morgan Truck Body', 'Rockport', 'Reading Truck', 'Wabash']
   },
   'Refrigerated Body': {
-    chassis: ['E-450', 'F-450', 'F-550', 'F-600', 'F-650'],
+    chassis: ['Transit', 'E-Transit', 'E-450', 'F-450', 'F-550', 'F-600', 'F-650'],
     manufacturers: ['Morgan Truck Body', 'Rockport', 'Great Dane Johnson', 'Wabash']
   },
   'Tow & Recovery': {
@@ -97,7 +97,7 @@ export function ConfiguratorBodyType() {
   const selectedChassis = configuration.chassis?.series
   const CHASSIS_ONLY = 'Chassis Only'
   const allBodyTypes = [CHASSIS_ONLY, ...Object.keys(UPFIT_MATRIX)]
-  const isBodyTypeAllowed = (bt) => bt === CHASSIS_ONLY || !selectedChassis || UPFIT_MATRIX[bt].chassis.includes(selectedChassis)
+  const isBodyTypeAllowed = (bt) => isDemoMode() || bt === CHASSIS_ONLY || !selectedChassis || UPFIT_MATRIX[bt].chassis.includes(selectedChassis)
 
   // If user changes chassis to one that doesn't support the current body type, reset selection
   useEffect(() => {

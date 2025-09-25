@@ -5,38 +5,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge.jsx'
 import { Input } from '@/components/ui/input.jsx'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select.jsx'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx'
 import { AspectRatio } from '@/components/ui/aspect-ratio.jsx'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu.jsx'
 import UpfitterLogo from './components/UpfitterLogo.jsx'
-import { Stepper } from './components/Stepper.jsx'
-import { StickyActions } from './components/Layout/StickyActions.jsx'
 // Removed FordProLogo import; using Ford CVC logo from public assets
 import { 
-  Truck, 
-  Building2, 
-  Wrench, 
   Search, 
-  Filter, 
-  ShoppingCart, 
   Star,
   MapPin,
-  Phone,
-  Mail,
-  Calendar,
-  DollarSign,
-  Users,
-  BarChart3,
-  Settings,
   Menu,
   X,
   Circle,
-  ArrowRight,
   ChevronDown
 } from 'lucide-react'
 import './App.css'
-import { demoInventory, demoBodies } from '@/lib/demo-data.js'
-import AnimatedHeader from './components/AnimatedHeader.jsx'
 import Hero from './components/Hero.jsx'
 
 // Import new configurator pages
@@ -116,9 +98,9 @@ function Header() {
   const location = useLocation()
 
   const navigation = [
-    { name: 'Catalog', href: '/', icon: ShoppingCart },
-    { name: 'Order Management', href: '/ordermanagement', icon: Building2 },
-    { name: 'Documentation', href: '/documentation', icon: Wrench },
+    { name: 'Catalog', href: '/' },
+    { name: 'Order Management', href: '/ordermanagement' },
+    { name: 'Documentation', href: '/documentation' },
   ]
 
   return (
@@ -131,22 +113,19 @@ function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-8">
-            {navigation.map((item) => {
-              const Icon = item.icon
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    location.pathname === item.href
-                      ? 'bg-blue-800 text-white'
-                      : 'text-blue-200 hover:bg-blue-800 hover:text-white'
-                  }`}
-                >
-                  <span>{item.name}</span>
-                </Link>
-              )
-            })}
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                to={item.href}
+                className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  location.pathname === item.href
+                    ? 'bg-blue-800 text-white'
+                    : 'text-blue-200 hover:bg-blue-800 hover:text-white'
+                }`}
+              >
+                <span>{item.name}</span>
+              </Link>
+            ))}
           </nav>
 
           {/* Mobile menu button */}

@@ -82,8 +82,8 @@ export function ConfiguratorChassis() {
     const compatibilityMap = {
       'Flatbed': ['F-350', 'F-450', 'F-550', 'F-600', 'F-650', 'F-750'],
       'Dump Body': ['F-350', 'F-450', 'F-550', 'F-600', 'F-650'],
-      'Dry Freight Body': ['E-350', 'E-450', 'F-450', 'F-550', 'F-600', 'F-650'],
-      'Refrigerated Body': ['E-450', 'F-450', 'F-550', 'F-600', 'F-650'],
+      'Dry Freight Body': ['Transit', 'E-Transit', 'E-350', 'E-450', 'F-450', 'F-550', 'F-600', 'F-650'],
+      'Refrigerated Body': ['Transit', 'E-Transit', 'E-450', 'F-450', 'F-550', 'F-600', 'F-650'],
       'Tow & Recovery': ['F-450', 'F-550', 'F-600'],
       'Bucket': ['F-550', 'F-600', 'F-650', 'F-750'],
       'Contractor Body': ['F-350', 'F-450', 'F-550', 'F-600'],

@@ -27,7 +27,9 @@ const CHASSIS_CATALOG = [
   { id: 'f650', name: 'F-650 SD Straight Frame (2025)', series: 'F-650', class: 'Class 6/7', gvwr: '25,600–29,000 lbs', description: 'For heavier regional delivery, construction, and municipal operations.', imageKey: 'F-650' },
   { id: 'f750', name: 'F-750 SD Straight Frame (2025)', series: 'F-750', class: 'Class 7', gvwr: 'Up to 37,000 lbs', description: 'Heavy vocational use and long-haul vocational fleets.', imageKey: 'F-750' },
   { id: 'e350', name: 'E-Series Cutaway E-350 (2025)', series: 'E-350', class: 'Class 3', gvwr: '10,050–12,700 lbs', description: 'Versatile cutaway platform for box and utility bodies.', imageKey: 'E-350' },
-  { id: 'e450', name: 'E-Series Cutaway E-450 (2025)', series: 'E-450', class: 'Class 4', gvwr: 'Up to 14,500 lbs', description: 'Higher GVWR cutaway ideal for delivery and service applications.', imageKey: 'E-450' }
+  { id: 'e450', name: 'E-Series Cutaway E-450 (2025)', series: 'E-450', class: 'Class 4', gvwr: 'Up to 14,500 lbs', description: 'Higher GVWR cutaway ideal for delivery and service applications.', imageKey: 'E-450' },
+  { id: 'transit', name: 'Transit 350 Cutaway (2025)', series: 'Transit', class: 'Class 2B', gvwr: '9,000–10,360 lbs', description: 'Cutaway platform ideal for city delivery, dry freight, and reefer.', imageKey: 'Transit' },
+  { id: 'etransit', name: 'E-Transit 350 Cutaway (2025)', series: 'E-Transit', class: 'Class 2B Electric', gvwr: '9,500–10,360 lbs', description: 'All-electric cutaway for last-mile vocational upfits.', imageKey: 'E-Transit' }
 ]
 
 function ChassisSelectionCard({ chassis, selected, onSelect }) {
